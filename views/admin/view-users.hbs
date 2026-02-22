@@ -1,0 +1,41 @@
+<section>
+  <div class="container">
+    <div class="row mt-4 ">
+    </div>
+    <table class="table mt-2" id="usersTable">
+      <thead>
+        <tr>
+          <th scope="col">User</th>
+          <th scope="col">Email</th>
+          <th scope="col">Addresses</th>
+          <th scope="col">Amount</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each orderedProducts}}
+        <tr>
+          <td>{{this.userName}}</td>
+          <td>{{this.deliveryDetails.address}}</td>
+          <td>
+            <ul class="mb-0">
+              {{#each this.products}}
+              <li>{{this.name}} (Qty: {{this.quantity}})</li>
+              {{/each}}
+            </ul>
+          </td>
+          <td>{{this.totalAmount}}</td>
+          <td>{{this.status}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+  $(function () {
+    $('#usersTable').DataTable();
+  });
+</script>
+

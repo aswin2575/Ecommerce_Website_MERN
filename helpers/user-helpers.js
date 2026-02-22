@@ -348,6 +348,62 @@ module.exports = {
                 resolve()
             })
         })
-    }
+    },
+
+    getAllOrdersDetailed: () => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                let orders = await db.get().collection(collection.ORDER_COLLECTION)
+                    .aggregate([
+                        {
+                            $lookup: {
+                                from: collection.USER_COLLECTION,
+                                localField: 'userId',
+                                foreignField: '_id',
+                                as: 'user'
+                            }
+                        },
+                        {
+                            $unwind: '$user'
+                        },
+                        {
+                            $unwind: '$products'
+                        },
+                        {
+                            $lookup: {
+                                from: collection.PRODUCT_COLLECTION,
+                                localField: 'products.item',
+                                foreignField: '_id',
+                                as: 'productDetails'
+                            }
+                        },
+                        {
+                            $unwind: '$productDetails'
+                        },
+                        {
+                            $group: {
+                                _id: '$_id',
+                                userName: { $first: '$user.Name' },
+                                deliveryDetails: { $first: '$deliveryDetails' },
+                                totalAmount: { $first: '$totalAmount' },
+                                status: { $first: '$status' },
+                                products: {
+                                    $push: {
+                                        name: '$productDetails.Name',
+                                        quantity: '$products.quantity'
+                                    }
+                                }
+                            }
+                        }
+                    ])
+                    .toArray()
+    
+                resolve(orders)
+            } catch (err) {
+                reject(err)
+            }
+        })
+    },
+    
 
 }
