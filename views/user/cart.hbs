@@ -5,6 +5,7 @@
                 <tr>
                     <th scope="col">Item</th>
                     <th scope="col">Title</th>
+                    <th scope="col">Price</th>
                     <th scope="col">Quantity</th>
                 </tr>
             </thead>
@@ -12,112 +13,134 @@
             <tbody>
                 {{#each products}}
                 <tr id="row-{{this.product._id}}">
-                    
-                    <td><img style="width:70px; height: 70px;" src="/product-images/{{this.product._id}}.jpg" alt=""></td>
-                    <td>{{this.product.Name}}</td>
-                    <td>
-                    
-                <button id="minus-{{this.product._id}}" class="cart-item-count mr-3" onclick="changequantity('{{this.cartId}}','{{this.product._id}}',-1)">
-                    -
-                    </button>
-                    <span id="qty-{{this.product._id}}">{{this.quantity}}</span>
-                    <button class="cart-item-count ml-3" onclick="changequantity('{{this.cartId}}','{{this.product._id}}',1)">
-                    +
-                    </button>
+
+                    <td><img style="width:70px; height: 70px;" src="/product-images/{{this.product._id}}.jpg" alt="">
                     </td>
+                    <td>{{this.product.Name}}</td>
+                    <td>{{this.product.Price}}</td>
                     <td>
-                    <button
-                    class="btn btn-danger"
-                    onclick="removeProduct('{{this.cartId}}','{{this.product._id}}')">
-                    Remove
-                    </button>
+
+                        <button id="minus-{{this.product._id}}" class="cart-item-count mr-3"
+                            onclick="changequantity('{{this.cartId}}','{{this.product._id}}','{{../user._id}}',-1)">
+                            -
+                        </button>
+                        <span id="qty-{{this.product._id}}">{{this.quantity}}</span>
+                        <button class="cart-item-count ml-3"
+                            onclick="changequantity('{{this.cartId}}','{{this.product._id}}','{{../user._id}}',1)">
+                            +
+                        </button>
+                    </td>
+                    {{!-- <p>Users: {{user._id}}</p> --}}
+                    <td>
+                        <button class="btn btn-danger"
+                            onclick="removeProduct('{{this.cartId}}','{{this.product._id}}','{{../user._id}}')">
+                            Remove
+                        </button>
                     </td>
                 </tr>
                 {{/each}}
             </tbody>
         </table>
+        <hr>
+        <div class="d-flex justify-content-end mt-4">
+            <div class="text-end ">
+                <h5 class="mb-2 me-2"><b>Total: RS. <span id="total">{{total}}</span></b></h5>
+
+                <a href="/place-order" class="btn btn-success">
+                    <b>Place Order</b>
+                </a>
+            </div>
+        </div>
+
+
     </div>
 </section>
 
 <script>
-    function changequantity(cartId,proId,count){
+    function changequantity(cartId, proId, userId, count) {
 
         let quantityElement = document.getElementById(`qty-${proId}`)
         let currentQty = parseInt(quantityElement.innerHTML)
-        {{!-- if (currentQty === 1 && count === -1) return --}}
+        if (currentQty === 1 && count === -1) return
 
+        
         $.ajax({
-            url:'/change-product-quantity',
-            data:{
-                cart:cartId,
-                product:proId,
-                count:count,
-                quantity:currentQty
+            url: '/change-product-quantity',
+            data: {
+                cart: cartId,
+                user:userId,
+                product: proId,
+                count: count,
+                quantity: currentQty
             },
-            method:'post',
-            success:(response)=>{
+            method: 'post',
+            success: (response) => {
                 if (response.removeProduct) {
-                // reload page if product removed
-                location.reload()
-            } else {
-                // update quantity instantly
-                let newQty = currentQty + count
-                quantityElement.innerHTML = newQty
-                updateMinusButton(proId, newQty)
-            }
+                    // reload page if product removed
+                    location.reload()
+                } else {
+                    // update quantity instantly
+                    let newQty = currentQty + count
+                    quantityElement.innerHTML = newQty
+                    document.getElementById("total").innerHTML = response.total
+                    updateMinusButton(proId, newQty)
+                }
             }
         })
     }
 </script>
 <script>
-function updateMinusButton(proId, quantity) {
-    const minusBtn = document.getElementById(`minus-${proId}`)
+    function updateMinusButton(proId, quantity) {
+        const minusBtn = document.getElementById(`minus-${proId}`)
 
-    if (quantity <= 1) {
-        minusBtn.disabled = true
-        minusBtn.style.opacity = "0.5"
-        minusBtn.style.cursor = "not-allowed"
-    } else {
-        minusBtn.disabled = false
-        minusBtn.style.opacity = "1"
-        minusBtn.style.cursor = "pointer"
-    }
-}
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll("[id^='qty-']").forEach(qtyEl => {
-        const proId = qtyEl.id.replace("qty-", "")
-        const qty = parseInt(qtyEl.innerHTML)
-        updateMinusButton(proId, qty)
-    })
-})
-</script>
-<script>
-function removeProduct(cartId, proId) {
-    if (!confirm("Remove this item from cart?")) return
-
-    $.ajax({
-        url: '/remove-cart-product',
-        method: 'post',
-        data: {
-            cart: cartId,
-            product: proId
-        },
-        success: (response) => {
-            if (response.status) {
-                const row = document.getElementById(`row-${proId}`)
-                if (row) {
-                    row.parentNode.removeChild(row)
-                }
-                // optional: reload if cart empty
-                if (document.querySelectorAll("tbody tr").length === 0) {
-                    location.reload()
-                }
-                // remove row instantly
-                {{!-- document.getElementById(`row-${proId}`).remove() --}}
-            }
+        if (quantity <= 1) {
+            minusBtn.disabled = true
+            minusBtn.style.opacity = "0.5"
+            minusBtn.style.cursor = "not-allowed"
+        } else {
+            minusBtn.disabled = false
+            minusBtn.style.opacity = "1"
+            minusBtn.style.cursor = "pointer"
         }
+    }
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll("[id^='qty-']").forEach(qtyEl => {
+            const proId = qtyEl.id.replace("qty-", "")
+            const qty = parseInt(qtyEl.innerHTML)
+            updateMinusButton(proId, qty)
+        })
     })
-}
+</script>
+<script>
+    function removeProduct(cartId, proId, userId) {
+        if (!confirm("Remove this item from cart?")) return
+
+        $.ajax({
+            url: '/remove-cart-product',
+            method: 'post',
+            data: {
+                cart: cartId,
+                user:userId,
+                product: proId
+            },
+            success: (response) => {
+                if (response.status) {
+                    const row = document.getElementById(`row-${proId}`)
+                    if (row) {
+                        row.parentNode.removeChild(row)
+                    }
+                    {{!-- console.log(response.total) --}}
+                    document.getElementById("total").innerHTML = response.total
+                    // optional: reload if cart empty
+                    if (document.querySelectorAll("tbody tr").length === 0) {
+                        location.reload()
+                    }
+                    // remove row instantly
+                    document.getElementById(`row-${proId}`).remove()
+                }
+            }
+        })
+    }
 </script>

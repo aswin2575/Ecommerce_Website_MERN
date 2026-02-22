@@ -47,6 +47,13 @@ module.exports = {
                 resolve()
             })
         })
+    },
+
+    allOrderDetails:()=>{
+        return new Promise (async(resolve,reject)=>{
+            order = await db.get().collection(collection.ORDER_COLLECTION).find().toArray()
+            resolve(order)
+        })
     }
 
 }
